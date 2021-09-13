@@ -1,15 +1,17 @@
-from gui import ui_support
-
+from gui import ui_support, ui_logic
+from tcp.client_base import Client
 
 class Main:
     def __init__(self):
-        pass
+        self.tcp = None
 
     def main(self):
         ui_support.setup_ui()
+        ui_logic.UILogic(ui_support.w)
         ui_support.show_ui()
 
 
 if __name__ == '__main__':
+    global main
     main = Main()
     main.main()
