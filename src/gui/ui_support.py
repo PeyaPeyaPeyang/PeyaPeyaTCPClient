@@ -48,3 +48,8 @@ def destroy_window():
 def show_ui():
     from gui import ui
     ui.vp_start_gui()
+
+
+def setup_ui():
+    from gui import ui
+    ui.vp_setup_gui()
