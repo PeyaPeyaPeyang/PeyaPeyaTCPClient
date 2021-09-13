@@ -21,7 +21,7 @@ except ImportError:
 
     py3 = True
 
-import ui_support
+from gui import ui_support
 
 w = None
 
