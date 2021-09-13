@@ -3,6 +3,7 @@ import socket
 from threading import Thread
 from time import time, sleep
 
+
 class AbstractClient:
     def state_changed(self, state):
         pass
