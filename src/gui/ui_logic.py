@@ -4,6 +4,11 @@ from threading import Thread
 from time import sleep
 from client_base import Client, AbstractClient, State
 
+try:
+    from Tkinter import messagebox
+except ImportError:
+    from tkinter import messagebox
+
 
 class UILogic(AbstractClient):
     def __init__(self, main_form):
@@ -16,6 +21,10 @@ class UILogic(AbstractClient):
 
         Thread(target=self.update_display).start()
         self.init()
+
+    def dispose(self):
+        self.alive = False
+        self.client.alive = False
 
     def update_display(self):
         while self.alive:
@@ -64,8 +73,20 @@ class UILogic(AbstractClient):
         self.mf.Input.delete(1.0, "end")
 
     def on_action_pressed(self, e):
-        disable(self.mf.Action)
-        disable(self.mf.IP)
-        disable(self.mf.Port)
-        disable(self.mf.Auto_Send)
+        if not self.try_connect:
+            self.try_connect = True
+            disable(self.mf.Action)
+            disable(self.mf.IP)
+            disable(self.mf.Port)
+            disable(self.mf.Auto_Send)
+            Thread(target=self.client.connect, args=(self.mf.IP.get("1.0", "end - 1 lines lineend"),
+                                                     ui_support.port_num.get(), ui_support.buffer_size.get())).start()
 
+    def on_error(self, message, detail, error_type):
+        messagebox.showerror(message, detail)
+        if error_type is "REFUSED":
+            self.try_connect = False
+            enable(self.mf.Action)
+            enable(self.mf.IP, "xterm")
+            enable(self.mf.Port, "xterm")
+            enable(self.mf.Auto_Send)

@@ -16,4 +16,4 @@ if __name__ == '__main__':
     global main
     main = Main()
     main.main()
-    main.ui.alive = False
+    main.ui.dispose()

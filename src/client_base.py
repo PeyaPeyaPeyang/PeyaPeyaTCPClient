@@ -14,6 +14,9 @@ class AbstractClient:
     def on_disconnected(self):
         pass
 
+    def on_error(self, message, detail, error_type):
+        pass
+
     def send_data(self, octet):
         pass
 
@@ -33,6 +36,7 @@ class Client:
         self.state = [State.DISCONNECTED]
         self.buffer_size = 1024
         self.handler = handler
+        self.alive = True
 
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.read_thread = Thread(target=self.read)
@@ -42,7 +46,7 @@ class Client:
         self.receive_sec = 0
 
     def watchdog(self):
-        while True:
+        while self.alive:
             if State.DISCONNECTED in self.state:
                 sleep(1)
                 continue
@@ -73,9 +77,14 @@ class Client:
         self.handler.state_changed(self.state)
 
     def connect(self, host, port, buffer_size=1024):
+        self.push_state(State.DISCONNECTED, True)
         self.push_state(State.CONNECTING)
         self.buffer_size = buffer_size
-        self.client.connect((host, port))
+        try:
+            self.client.connect((host, port))
+        except ConnectionError as e:
+            self.handler.on_error("Connection refused.", str(e), "REFUSED")
+            return
         self.push_state(State.CONNECTING, True)
         self.push_state(State.CONNECTED)
         self.read_thread.start()
