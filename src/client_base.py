@@ -82,7 +82,9 @@ class Client:
         self.buffer_size = buffer_size
         try:
             self.client.connect((host, port))
-        except ConnectionError as e:
+        except ConnectionRefusedError as e:
+            self.push_state(State.CONNECTING, True)
+            self.push_state(State.DISCONNECTED)
             self.handler.on_error("Connection refused.", str(e), "REFUSED")
             return
         self.push_state(State.CONNECTING, True)
