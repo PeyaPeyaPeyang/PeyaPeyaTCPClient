@@ -1,7 +1,7 @@
-from enum import Enum, auto
+from enum import Enum
 import socket
 from threading import Thread
-from time import time, sleep
+from time import sleep
 
 
 class AbstractClient:
@@ -22,18 +22,16 @@ class AbstractClient:
 
 
 class State(Enum):
-    DISCONNECTED = auto()
-    CONNECTING = auto()
-    CONNECTED = auto()
-    RECEIVING_DATA = auto()
+    DISCONNECTED = "Disconnected"
+    CONNECTING = "Connecting"
+    CONNECTED = "Connected"
+    RECEIVING_DATA = "Data receiving"
 
 
 class Client:
-    def __init__(self, host, port, buffer_size, handler):
+    def __init__(self, handler):
         self.state = [State.DISCONNECTED]
-        self.host = host
-        self.port = port
-        self.buffer_size = buffer_size
+        self.buffer_size = 1024
         self.handler = handler
 
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -44,8 +42,6 @@ class Client:
         self.receive_sec = 0
 
     def watchdog(self):
-        start = time()
-        interval = 0
         while True:
             if State.DISCONNECTED in self.state:
                 sleep(1)
@@ -54,8 +50,7 @@ class Client:
                 self.push_state(State.RECEIVING_DATA, True)
             self.send_sec = 0
             self.receive_sec = 0
-            interval = ((start - time()) % interval) or interval
-            sleep(interval)
+            sleep(1)
 
     def read(self):
         while True:
@@ -77,9 +72,10 @@ class Client:
 
         self.handler.state_changed(self.state)
 
-    def connect(self):
+    def connect(self, host, port, buffer_size=1024):
         self.push_state(State.CONNECTING)
-        self.client.connect((self.host, self.port))
+        self.buffer_size = buffer_size
+        self.client.connect((host, port))
         self.push_state(State.CONNECTING, True)
         self.push_state(State.CONNECTED)
         self.read_thread.start()
