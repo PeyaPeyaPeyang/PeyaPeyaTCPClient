@@ -1,12 +1,38 @@
 from gui import ui_support, ui
 from utils import *
+from threading import Thread
+from time import sleep
+from client_base import Client, AbstractClient, State
 
 
-class UILogic:
+class UILogic(AbstractClient):
     def __init__(self, main_form):
         main_form: ui.MainForm
+
         self.mf = main_form
+        self.client = Client(self)
+        self.alive = True
+        self.try_connect = False
+
+        Thread(target=self.update_display).start()
         self.init()
+
+    def update_display(self):
+        while self.alive:
+            if State.DISCONNECTED in self.client.state:
+                self.mf.Status.configure(text="Status: Disconnected")
+                sleep(1)
+                continue
+
+            base = "Status: "
+
+            for state in self.client.state:
+                base += state.value + " |"
+
+            base += " ↑ " + str(self.client.send_sec) + " b/s | ↓ " + str(self.client.receive_sec) + " b/s"
+
+            self.mf.Status.configure(text=base)
+            sleep(1)
 
     def init(self):
         form = self.mf
