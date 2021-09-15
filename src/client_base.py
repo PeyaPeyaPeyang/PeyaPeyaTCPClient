@@ -58,11 +58,15 @@ class Client:
 
     def read(self):
         while True:
-            chunk = self.client.recv(self.buffer_size)
-            if not chunk or self.state == State.DISCONNECTED:
-                break
-            self.receive_sec += len(chunk)
-            self.handler.on_receive_data(chunk)
+            try:
+                chunk = self.client.recv(self.buffer_size)
+                if not chunk or self.state == State.DISCONNECTED:
+                    break
+                self.receive_sec += len(chunk)
+                self.handler.on_receive_data(chunk)
+            except:
+                self.disconnect()
+                return
 
     def push_state(self, state, m=False):
         if m:
@@ -82,11 +86,12 @@ class Client:
         self.buffer_size = buffer_size
         try:
             self.client.connect((host, port))
-        except ConnectionRefusedError as e:
+        except (socket.gaierror, ConnectionRefusedError) as e:
             self.push_state(State.CONNECTING, True)
             self.push_state(State.DISCONNECTED)
-            self.handler.on_error("Connection refused.", str(e), "REFUSED")
+            self.handler.on_error("Connection refused.", str(e), "TRYCONN_ERR")
             return
+
         self.push_state(State.CONNECTING, True)
         self.push_state(State.CONNECTED)
         self.read_thread.start()
