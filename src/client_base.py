@@ -60,12 +60,13 @@ class Client:
         while True:
             try:
                 chunk = self.client.recv(self.buffer_size)
-                if not chunk or self.state == State.DISCONNECTED:
+                if not chunk or State.DISCONNECTED in self.state:
                     break
                 self.receive_sec += len(chunk)
                 self.handler.on_receive_data(chunk)
             except:
-                self.disconnect()
+                if State.DISCONNECTED not in self.state:
+                    self.disconnect()
                 return
 
     def push_state(self, state, m=False):

@@ -88,6 +88,10 @@ class UILogic(AbstractClient):
             disable(self.mf.Auto_Send)
             Thread(target=self.client.connect, args=(self.mf.IP.get("1.0", "end").replace("\n", ""),
                                                      ui_support.port_num.get(), ui_support.buffer_size.get())).start()
+        else:
+            self.try_connect = False
+            self.logger.push("Connection", "Disconnecting...")
+            self.client.disconnect()
 
     def on_error(self, message, detail, error_type):
         self.logger.push("Error", message)
@@ -107,11 +111,12 @@ class UILogic(AbstractClient):
                          ":" + str(ui_support.port_num.get()))
 
     def on_disconnected(self):
-        disable(self.mf.Action)
-        disable(self.mf.IP)
-        disable(self.mf.Port)
-        disable(self.mf.Auto_Send)
-        disable(self.mf.Send)
+        enable(self.mf.Action)
+        enable(self.mf.IP, "xterm")
+        enable(self.mf.Port, "xterm")
+        enable(self.mf.Auto_Send)
+        enable(self.mf.Send)
+        self.mf.Action.configure(text="Connect")
         self.logger.push("Connection", "Disconnected from server.")
 
 
