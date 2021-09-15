@@ -64,7 +64,9 @@ class Client:
                     break
                 self.receive_sec += len(chunk)
                 self.handler.on_receive_data(chunk)
-            except:
+            except ConnectionAbortedError:
+                return
+            except Exception as e:
                 if State.DISCONNECTED not in self.state:
                     self.disconnect()
                 return

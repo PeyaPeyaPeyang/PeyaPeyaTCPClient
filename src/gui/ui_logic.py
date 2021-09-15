@@ -5,9 +5,12 @@ from time import sleep
 from client_base import Client, AbstractClient, State
 from datetime import datetime
 
+
 try:
+    import Tkinter as tkinter
     from Tkinter import messagebox
 except ImportError:
+    import tkinter as tkinter
     from tkinter import messagebox
 
 
@@ -21,8 +24,8 @@ class UILogic(AbstractClient):
         self.try_connect = False
         self.logger = None
 
-        Thread(target=self.update_display).start()
         self.init()
+        Thread(target=self.update_display).start()
 
     def dispose(self):
         self.alive = False
@@ -47,6 +50,8 @@ class UILogic(AbstractClient):
 
     def init(self):
         form = self.mf
+
+        form.Packet_log = init_packet_log()
 
         self.logger = Logger(form.Packet_log)
 
@@ -73,7 +78,7 @@ class UILogic(AbstractClient):
         form.Clear_Logs.bind("<ButtonRelease-1>", self.on_clear_output_pressed)
 
     def on_clear_output_pressed(self, e):
-        self.mf.Packet_log.delete(0, "end")
+        self.logger.clear()
 
     def on_clear_input_pressed(self, e):
         self.mf.Input.delete(1.0, "end")
@@ -86,6 +91,7 @@ class UILogic(AbstractClient):
             disable(self.mf.IP)
             disable(self.mf.Port)
             disable(self.mf.Auto_Send)
+            self.client = Client(self)
             Thread(target=self.client.connect, args=(self.mf.IP.get("1.0", "end").replace("\n", ""),
                                                      ui_support.port_num.get(), ui_support.buffer_size.get())).start()
         else:
@@ -120,14 +126,79 @@ class UILogic(AbstractClient):
         self.logger.push("Connection", "Disconnected from server.")
 
 
+def init_packet_log():
+    a = PopupListBox(ui_support.top_level)
+    a.place(relx=0.021, rely=0.553, relheight=0.35, relwidth=0.965)
+    a.configure(background="white")
+    a.configure(cursor="xterm")
+    a.configure(disabledforeground="#a3a3a3")
+    a.configure(font="TkFixedFont")
+    a.configure(foreground="black")
+    a.configure(highlightbackground="#d9d9d9")
+    a.configure(highlightcolor="#d9d9d9")
+    a.configure(selectbackground="blue")
+    a.configure(selectforeground="white")
+    return a
+
+
+class LogElement:
+    def __init__(self, date, name, message):
+        self.date = date
+        self.name = name
+        self.message = message
+
+    def format(self):
+        return "{}  {:10}  {}".format(self.date.strftime("%Y/%m/%d %H:%M:%S"), self.name, self.message)
+
+    def __str__(self):
+        return self.format()
+
+
+class PopupListBox(ui.ScrolledListBox):
+    def __init__(self, master, **kw):
+        super().__init__(master, **kw)
+        self.popup = tkinter.Menu(self, tearoff=0)
+
+        self.bind("<ButtonRelease-3>", self.click)
+
+    def click(self, e):
+        self.selection_clear(0, "end")
+        self.selection_set(self.nearest(e.y))
+        self.activate(self.nearest(e.y))
+        try:
+            self.popup.tk_popup(e.x_root, e.y_root, 0)
+        finally:
+            self.popup.grab_release()
+
+    def add_command(self, name, func):
+        self.popup.add_command(label=name, command=func)
+
+
 class Logger:
+
     def __init__(self, control):
         self.control = control
+        control.add_command("Copy the body", self.copy)
         self.log_type_len = 0
+        self.logs = []
+
+    def copy(self):
+        log = self.logs[self.control.curselection()[0]]
+        clipboard = tkinter.Tk()
+        clipboard.withdraw()
+        clipboard.clipboard_clear()
+        clipboard.clipboard_append(log.message)
+        clipboard.update()
+        clipboard.destroy()
 
     def push(self, log_type, message):
         self.log_type_len = max([len(log_type), self.log_type_len])
+        ls = LogElement(datetime.now(), log_type, message)
 
-        base = "{}  {:11}  {}".format(datetime.now().strftime("%Y/%m/%d %H:%M:%S"), log_type, message)
+        self.logs.append(ls)
+        self.control.insert("end", ls)
 
-        self.control.insert("end", base)
+    def clear(self):
+        self.control.delete(0, "end")
+        del self.logs
+        self.logs = []
