@@ -23,7 +23,10 @@ class UILogic(AbstractClient):
         self.alive = True
         self.try_connect = False
         self.logger = None
+
+        # line by line send
         self.sent = 0
+        self.data = None
 
         self.encodings = get_encodings()
         self.encodings.insert(4, "Raw bytes")
@@ -102,8 +105,17 @@ class UILogic(AbstractClient):
             self.client.send_data(encode_data(self.mf.Input.get("1.0", "end")[:-1], enc))
             return
 
-        for data in self.mf.Input.get("1.0", "end")[:-1].split("\n"):
-            self.client.send_data(encode_data(data, enc))
+        if self.data is None:
+            self.data = self.mf.Input.get("1.0", "end")[:-1].split("\n")
+
+        self.client.send_data(encode_data(self.data[self.sent], enc))
+        self.sent += 1
+
+        ln = len(self.data)
+        if ln == self.sent:
+            disable(self.mf.Send)
+        elif ln <= self.sent:
+            return
 
     def on_clear_output_pressed(self, e):
         self.logger.clear()
