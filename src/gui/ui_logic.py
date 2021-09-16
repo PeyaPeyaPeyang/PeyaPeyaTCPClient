@@ -137,6 +137,12 @@ class UILogic(AbstractClient):
         enable(self.mf.Action)
         self.logger.push("Connection", "Connection established to " + self.mf.IP.get("1.0", "end").replace("\n", "") +
                          ":" + str(ui_support.port_num.get()))
+        if ui_support.auto_send_checked:
+            if ui_support.send_one_line_checked:
+                for i in range(0, self.mf.Input.get("1.0", "end").replace("\n", "", 1).split("\n")):
+                    self.on_send_pressed()
+            else:
+                self.on_send_pressed()
 
     def on_disconnected(self):
         enable(self.mf.Action)
