@@ -23,6 +23,9 @@ class AbstractClient:
     def on_receive_data(self, octet):
         pass
 
+    def on_send_data(self, octet):
+        pass
+
 
 class State(Enum):
     DISCONNECTED = "Disconnected"
@@ -37,6 +40,7 @@ class Client:
         self.buffer_size = 1024
         self.handler = handler
         self.alive = True
+        self.receive_cache = b""
 
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.read_thread = Thread(target=self.read)
@@ -60,10 +64,16 @@ class Client:
         while True:
             try:
                 chunk = self.client.recv(self.buffer_size)
-                if not chunk or State.DISCONNECTED in self.state:
+                if not chunk:
+                    if len(self.receive_cache) == 0:
+                        continue
+                    self.handler.on_receive_data(self.receive_cache)
+                    self.receive_cache = b""
+
+                if State.DISCONNECTED in self.state:
                     break
                 self.receive_sec += len(chunk)
-                self.handler.on_receive_data(chunk)
+                self.receive_cache += chunk
             except ConnectionAbortedError:
                 return
             except Exception as e:
@@ -110,3 +120,4 @@ class Client:
     def send_data(self, octet):
         self.send_sec += len(octet)
         self.client.send(octet)
+        self.handler.on_send_data(octet)

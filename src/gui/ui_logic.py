@@ -1,4 +1,4 @@
-from codecs import encode
+from codecs import encode, decode
 from datetime import datetime
 from threading import Thread
 from time import sleep
@@ -177,11 +177,23 @@ class UILogic(AbstractClient):
         self.mf.Action.configure(text="Connect")
         self.logger.push("Connection", "Disconnected from server.")
 
+    def on_send_data(self, octet):
+        self.logger.push("Sent", decode_data(octet, ui_support.send_encoding.get()))
+
+    def on_receive_data(self, octet):
+        self.logger.push("Received", decode_data(octet, ui_support.receive_encoding.get()))
+
 
 def encode_data(data, encoding):
     if encoding == "Raw bytes":
         return bytes.fromhex(data.replace("-", "").replace("0x", "").lower().replace(" ", ""))
     return encode(data, encoding.lower().replace("-", "_"))
+
+
+def decode_data(data, encoding):
+    if encoding == "Raw bytes":
+        return "-".join("{:02X}".format(ord(chunk)) for chunk in data)
+    return decode(data, encoding.lower().replace("-", "_"))
 
 
 def init_packet_log():
