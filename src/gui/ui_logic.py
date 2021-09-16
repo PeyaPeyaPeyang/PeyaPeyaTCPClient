@@ -98,7 +98,7 @@ class UILogic(AbstractClient):
 
         enc = ui_support.send_encoding.get()
 
-        if not ui_support.send_one_line_checked:
+        if not ui_support.send_one_line_checked.get():
             self.client.send_data(encode_data(self.mf.Input.get("1.0", "end")[:-1], enc))
             return
 
