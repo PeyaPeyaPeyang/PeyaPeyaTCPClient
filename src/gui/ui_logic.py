@@ -1,10 +1,11 @@
-from gui import ui_support, ui
-from utils import *
+from codecs import encode
+from datetime import datetime
 from threading import Thread
 from time import sleep
+
 from client_base import Client, AbstractClient, State
-from datetime import datetime
-from codecs import encode, decode
+from gui import ui_support, ui
+from utils import *
 
 try:
     import Tkinter as tkinter
@@ -229,9 +230,6 @@ class PopupListBox(ui.ScrolledListBox):
 
     def add_command(self, name, func):
         self.popup.add_command(label=name, command=func)
-
-
-
 
 
 class Logger:

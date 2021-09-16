@@ -1,5 +1,5 @@
-from enum import Enum
 import socket
+from enum import Enum
 from threading import Thread
 from time import sleep
 

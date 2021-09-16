@@ -25,7 +25,7 @@ def get_encodings():
         elif encoding.endswith(".py"):
             encoding = encoding[:-3]
 
-        encoding = encoding.replace("_", "-").replace("cp", "CP").replace("euc", "EUC").replace("utf", "UTF")\
+        encoding = encoding.replace("_", "-").replace("cp", "CP").replace("euc", "EUC").replace("utf", "UTF") \
             .replace("iso", "ISO").replace("jp", "JP")
 
         encoding = encoding[0].upper() + encoding[1:]

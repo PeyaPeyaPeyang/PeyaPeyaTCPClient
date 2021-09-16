@@ -1,4 +1,4 @@
-from gui import ui, ui_support, ui_logic
+from gui import ui_support, ui_logic
 
 try:
     import Tkinter as tkinter
