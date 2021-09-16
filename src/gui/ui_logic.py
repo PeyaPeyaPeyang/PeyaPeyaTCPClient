@@ -206,7 +206,11 @@ class LogElement:
         self.message = message
 
     def format(self):
-        return "{}  {:10}  {}".format(self.date.strftime("%Y/%m/%d %H:%M:%S"), self.name, self.message)
+        msg = self.message
+        if len(self.message) > 150:
+            msg = msg[:150] + "..."
+
+        return "{}  {:10}  {}".format(self.date.strftime("%Y/%m/%d %H:%M:%S"), self.name, msg)
 
     def __str__(self):
         return self.format()
