@@ -4,7 +4,7 @@ from threading import Thread
 from time import sleep
 from client_base import Client, AbstractClient, State
 from datetime import datetime
-
+from codecs import encode, decode
 
 try:
     import Tkinter as tkinter
@@ -23,9 +23,10 @@ class UILogic(AbstractClient):
         self.alive = True
         self.try_connect = False
         self.logger = None
+        self.sent = 0
 
         self.encodings = get_encodings()
-        self.encodings.insert(4, "Raw")
+        self.encodings.insert(4, "Raw bytes")
 
         self.init()
         Thread(target=self.update_display).start()
@@ -95,6 +96,16 @@ class UILogic(AbstractClient):
         if self.mf.Send.cget("state") == "disabled":
             return
 
+        enc = ui_support.send_encoding.get()
+
+        if not ui_support.send_one_line_checked:
+            self.client.send_data(encode_data(self.mf.Input.get("1.0", "end")[:-1], enc))
+            return
+
+        for data in self.mf.Input.get("1.0", "end")[:-1].split("\n"):
+            self.client.send_data(encode_data(data, enc))
+
+
     def on_clear_output_pressed(self, e):
         self.logger.clear()
 
@@ -137,9 +148,9 @@ class UILogic(AbstractClient):
         enable(self.mf.Action)
         self.logger.push("Connection", "Connection established to " + self.mf.IP.get("1.0", "end").replace("\n", "") +
                          ":" + str(ui_support.port_num.get()))
-        if ui_support.auto_send_checked:
-            if ui_support.send_one_line_checked:
-                for i in range(0, self.mf.Input.get("1.0", "end").replace("\n", "", 1).split("\n")):
+        if ui_support.auto_send_checked.get():
+            if ui_support.send_one_line_checked.get():
+                for i in range(0, self.mf.Input.get("1.0", "end").replace("\n", "", 1).count("\n")):
                     self.on_send_pressed()
             else:
                 self.on_send_pressed()
@@ -152,6 +163,12 @@ class UILogic(AbstractClient):
         enable(self.mf.Send)
         self.mf.Action.configure(text="Connect")
         self.logger.push("Connection", "Disconnected from server.")
+
+
+def encode_data(data, encoding):
+    if encoding == "Raw bytes":
+        return bytes.fromhex(data.replace("-", "").replace("0x", "").lower().replace(" ", ""))
+    return encode(data, encoding.lower().replace("-", "_"))
 
 
 def init_packet_log():
@@ -200,6 +217,9 @@ class PopupListBox(ui.ScrolledListBox):
 
     def add_command(self, name, func):
         self.popup.add_command(label=name, command=func)
+
+
+
 
 
 class Logger:
