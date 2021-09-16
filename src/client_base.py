@@ -67,8 +67,14 @@ class Client:
                 if not chunk:
                     if len(self.receive_cache) == 0:
                         continue
+                    self.receive_sec += len(chunk)
                     self.handler.on_receive_data(self.receive_cache)
                     self.receive_cache = b""
+                    continue
+                elif len(chunk) <= self.buffer_size:
+                    self.receive_sec += len(chunk)
+                    self.handler.on_receive_data(chunk)
+                    continue
 
                 if State.DISCONNECTED in self.state:
                     break

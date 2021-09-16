@@ -192,7 +192,8 @@ def encode_data(data, encoding):
 
 def decode_data(data, encoding):
     if encoding == "Raw bytes":
-        return "-".join("{:02X}".format(ord(chunk)) for chunk in data)
+        hex_str = data.hex().upper()
+        return "-".join(hex_str[i:i+2] for i in range(0, len(hex_str), 2))
     return decode(data, encoding.lower().replace("-", "_"))
 
 
