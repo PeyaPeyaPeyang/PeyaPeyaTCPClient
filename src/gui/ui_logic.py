@@ -105,7 +105,6 @@ class UILogic(AbstractClient):
         for data in self.mf.Input.get("1.0", "end")[:-1].split("\n"):
             self.client.send_data(encode_data(data, enc))
 
-
     def on_clear_output_pressed(self, e):
         self.logger.clear()
 
@@ -141,6 +140,7 @@ class UILogic(AbstractClient):
             enable(self.mf.IP, "xterm")
             enable(self.mf.Port, "xterm")
             enable(self.mf.Auto_Send)
+            disable(self.mf.Send)
 
     def on_connected(self):
         enable(self.mf.Send)
@@ -160,7 +160,7 @@ class UILogic(AbstractClient):
         enable(self.mf.IP, "xterm")
         enable(self.mf.Port, "xterm")
         enable(self.mf.Auto_Send)
-        enable(self.mf.Send)
+        disable(self.mf.Send)
         self.mf.Action.configure(text="Connect")
         self.logger.push("Connection", "Disconnected from server.")
 
