@@ -24,6 +24,9 @@ class UILogic(AbstractClient):
         self.try_connect = False
         self.logger = None
 
+        self.encodings = get_encodings()
+        self.encodings.insert(4, "Raw")
+
         self.init()
         Thread(target=self.update_display).start()
 
@@ -51,24 +54,22 @@ class UILogic(AbstractClient):
     def init(self):
         form = self.mf
 
-        form.Packet_log = init_packet_log()
+        disable(form.Action)
 
+        form.Packet_log = init_packet_log()
         self.logger = Logger(form.Packet_log)
 
         form.Packet_log.configure(cursor="")
 
         form.IP.insert(1.0, "localhost")
 
-        encoding = get_encodings()
-        encoding.insert(4, "Raw")
-
         ui_support.send_encoding.set("Send Encoding")
         ui_support.receive_encoding.set("Receive Encoding")
 
         form.Send_Encoding.configure(state="readonly")
-        form.Send_Encoding.configure(values=encoding)
+        form.Send_Encoding.configure(values=self.encodings)
         form.Receive_Encoding.configure(state="readonly")
-        form.Receive_Encoding.configure(values=encoding)
+        form.Receive_Encoding.configure(values=self.encodings)
 
         ui_support.port_num.set(80)
         ui_support.buffer_size.set(1024)
@@ -76,6 +77,23 @@ class UILogic(AbstractClient):
         form.Action.bind("<ButtonRelease-1>", self.on_action_pressed)
         form.Clear_In.bind("<ButtonRelease-1>", self.on_clear_input_pressed)
         form.Clear_Logs.bind("<ButtonRelease-1>", self.on_clear_output_pressed)
+        form.Send.bind("<ButtonRelease-1>", self.on_send_pressed)
+        form.IP.bind("<KeyPress>", self.validate)
+        form.Send_Encoding.bind("<<ComboboxSelected>>", self.validate)
+        form.Receive_Encoding.bind("<<ComboboxSelected>>", self.validate)
+
+    def validate(self, *args):
+        if "\n" in self.mf.IP.get("1.0", "end").replace("\n", ""):
+            disable(self.mf.Action)
+        elif ui_support.send_encoding.get() == "Send Encoding" or \
+                ui_support.receive_encoding.get() == "Receive Encoding":
+            disable(self.mf.Action)
+        else:
+            enable(self.mf.Action)
+
+    def on_send_pressed(self, *args):
+        if self.mf.Send.cget("state") == "disabled":
+            return
 
     def on_clear_output_pressed(self, e):
         self.logger.clear()
@@ -84,7 +102,11 @@ class UILogic(AbstractClient):
         self.mf.Input.delete(1.0, "end")
 
     def on_action_pressed(self, e):
+        if self.mf.Action.cget("state") == "disabled":
+            return
         if not self.try_connect:
+            if ui_support.auto_clear_checked:
+                self.logger.clear()
             self.try_connect = True
             self.logger.push("Connection", "Connecting...")
             disable(self.mf.Action)
