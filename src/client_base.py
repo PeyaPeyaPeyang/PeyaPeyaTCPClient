@@ -61,7 +61,7 @@ class Client:
             sleep(1)
 
     def read(self):
-        while True:
+        while self.alive:
             try:
                 chunk = self.client.recv(self.buffer_size)
                 if not chunk:

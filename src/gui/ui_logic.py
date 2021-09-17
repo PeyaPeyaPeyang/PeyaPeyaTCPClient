@@ -103,13 +103,24 @@ class UILogic(AbstractClient):
         enc = ui_support.send_encoding.get()
 
         if not ui_support.send_one_line_checked.get():
-            self.client.send_data(encode_data(self.mf.Input.get("1.0", "end")[:-1], enc))
+            try:
+                dat = encode_data(self.mf.Input.get("1.0", "end")[:-1], enc)
+            except ValueError as e:
+                self.on_error("Encoding Error", str(e), "ENCODING")
+                return
+            self.client.send_data(dat)
             return
 
         if self.data is None:
             self.data = self.mf.Input.get("1.0", "end")[:-1].split("\n")
 
-        self.client.send_data(encode_data(self.data[self.sent], enc))
+        try:
+            dat = encode_data(self.data[self.sent], enc)
+        except ValueError as e:
+            self.on_error("Encoding Error", str(e), "ENCODING")
+            return
+
+        self.client.send_data(dat)
         self.sent += 1
 
         ln = len(self.data)
@@ -145,7 +156,11 @@ class UILogic(AbstractClient):
             self.client.disconnect()
 
     def on_error(self, message, detail, error_type):
-        self.logger.push("Error", message)
+
+        if error_type is "ENCODING":
+            self.logger.push("Error", message + ": " + detail)
+        else:
+            self.logger.push("Error", message)
         messagebox.showerror(message, detail)
         if error_type is "TRYCONN_ERR":
             self.try_connect = False
@@ -181,7 +196,13 @@ class UILogic(AbstractClient):
         self.logger.push("Sent", decode_data(octet, ui_support.send_encoding.get()))
 
     def on_receive_data(self, octet):
-        self.logger.push("Received", decode_data(octet, ui_support.receive_encoding.get()))
+        try:
+            dat = decode_data(octet, ui_support.receive_encoding.get())
+        except ValueError as e:
+            self.on_error("Encoding Error(R)", str(e), "ENCODING")
+            return
+
+        self.logger.push("Received", dat)
 
 
 def encode_data(data, encoding):
